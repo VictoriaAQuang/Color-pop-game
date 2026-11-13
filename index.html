@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Color Pop! — Pattern Reaction Game</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+      user-select: none;
+    }
+
+    .game-container {
+      background-color: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background-color: var(--bg);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+
+    .dice-section {
+      background-color: rgba(15, 23, 42, 0.6);
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .dice-prompt {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .dice-pair {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .die {
+      width: 76px;
+      height: 76px;
+      background-color: #ffffff;
+      color: #0f172a;
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-weight: 800;
+      box-shadow: 0 6px 0 #cbd5e1;
+      transition: transform 0.15s ease;
+    }
+
+    .die.roll-anim {
+      transform: scale(0.9) rotate(-6deg);
+    }
+
+    .die-color-swatch {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 3px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .die-symbol {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .die-tag {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: #475569;
+      margin-top: 4px;
+      letter-spacing: 0.04em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tile {
+      background-color: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      height: 82px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.2rem;
+      cursor: pointer;
+      transition: transform 0.08s ease, border-color 0.15s ease, background-color 0.15s ease;
+    }
+
+    .tile:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .tile:active {
+      transform: scale(0.95);
+    }
+
+    .tile.correct {
+      background-color: rgba(34, 197, 94, 0.25);
+      border-color: var(--success);
+    }
+
+    .tile.wrong {
+      background-color: rgba(239, 68, 68, 0.25);
+      border-color: var(--danger);
+      animation: shake 0.25s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: #0f172a;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn:hover {
+      opacity: 0.92;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .feedback {
+      min-height: 22px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <h1>Color Pop!</h1>
+    <p class="subtitle">Match the rolled <strong>Color</strong> + <strong>Symbol</strong> before time runs out!</p>
+
+    <div class="hud">
+      <div>
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div>
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timer">30.0s</div>
+      </div>
+      <div>
+        <div class="stat-label">Streak</div>
+        <div class="stat-value" id="streak">0</div>
+      </div>
+    </div>
+
+    <div id="play-area" class="hidden">
+      <div class="dice-section">
+        <div class="dice-prompt">Rolled Dice Target</div>
+        <div class="dice-pair">
+          <div class="die" id="die-color">
+            <div class="die-color-swatch" id="swatch"></div>
+            <span class="die-tag" id="color-name">RED</span>
+          </div>
+          <div class="die" id="die-symbol">
+            <div class="die-symbol" id="symbol-icon">★</div>
+            <span class="die-tag" id="symbol-name">STAR</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="feedback" id="feedback"></div>
+      <div class="grid" id="tile-grid"></div>
+    </div>
+
+    <button class="btn" id="start-btn">Start Game</button>
+  </div>
+
+  <script>
+    const COLORS = [
+      { name: "Red", hex: "#ef4444" },
+      { name: "Blue", hex: "#3b82f6" },
+      { name: "Green", hex: "#22c55e" },
+      { name: "Yellow", hex: "#eab308" },
+      { name: "Purple", hex: "#a855f7" }
+    ];
+
+    const SYMBOLS = [
+      { name: "Star", icon: "★" },
+      { name: "Circle", icon: "●" },
+      { name: "Heart", icon: "♥" },
+      { name: "Diamond", icon: "◆" },
+      { name: "Clover", icon: "♣" }
+    ];
+
+    let score = 0;
+    let streak = 0;
+    let timeLeft = 30.0;
+    let timerInterval = null;
+    let currentTarget = null;
+    let isPlaying = false;
+
+    const scoreEl = document.getElementById("score");
+    const timerEl = document.getElementById("timer");
+    const streakEl = document.getElementById("streak");
+    const playArea = document.getElementById("play-area");
+    const startBtn = document.getElementById("start-btn");
+    const gridEl = document.getElementById("tile-grid");
+    const feedbackEl = document.getElementById("feedback");
+
+    const dieColorEl = document.getElementById("die-color");
+    const dieSymbolEl = document.getElementById("die-symbol");
+    const swatchEl = document.getElementById("swatch");
+    const colorNameEl = document.getElementById("color-name");
+    const symbolIconEl = document.getElementById("symbol-icon");
+    const symbolNameEl = document.getElementById("symbol-name");
+
+    function getRandomItem(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function generateCombinations() {
+      const all = [];
+      for (const c of COLORS) {
+        for (const s of SYMBOLS) {
+          all.push({ color: c, symbol: s, id: `${c.name}-${s.name}` });
+        }
+      }
+      return all;
+    }
+
+    const ALL_COMBOS = generateCombinations();
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function nextRound() {
+      // Animate dice
+      dieColorEl.classList.add("roll-anim");
+      dieSymbolEl.classList.add("roll-anim");
+      setTimeout(() => {
+        dieColorEl.classList.remove("roll-anim");
+        dieSymbolEl.classList.remove("roll-anim");
+      }, 150);
+
+      // Pick target combo
+      currentTarget = getRandomItem(ALL_COMBOS);
+      swatchEl.style.backgroundColor = currentTarget.color.hex;
+      colorNameEl.textContent = currentTarget.color.name;
+      symbolIconEl.textContent = currentTarget.symbol.icon;
+      symbolNameEl.textContent = currentTarget.symbol.name;
+
+      // Pick 8 distractors + 1 target
+      const distractors = shuffle(ALL_COMBOS.filter(c => c.id !== currentTarget.id)).slice(0, 8);
+      const boardTiles = shuffle([currentTarget, ...distractors]);
+
+      gridEl.innerHTML = "";
+      boardTiles.forEach(item => {
+        const tile = document.createElement("button");
+        tile.className = "tile";
+        tile.style.color = item.color.hex;
+        tile.textContent = item.symbol.icon;
+        tile.setAttribute("aria-label", `${item.color.name} ${item.symbol.name}`);
+        tile.onclick = () => handleTileClick(item, tile);
+        gridEl.appendChild(tile);
+      });
+    }
+
+    function handleTileClick(item, tileEl) {
+      if (!isPlaying) return;
+
+      if (item.id === currentTarget.id) {
+        streak++;
+        const bonus = Math.min(streak * 10, 50);
+        score += 100 + bonus;
+        timeLeft = Math.min(timeLeft + 0.6, 30.0);
+        tileEl.classList.add("correct");
+        feedbackEl.style.color = "#22c55e";
+        feedbackEl.textContent = `+${100 + bonus} pts! (+0.6s)`;
+        updateHUD();
+        setTimeout(nextRound, 120);
+      } else {
+        streak = 0;
+        timeLeft = Math.max(timeLeft - 2.0, 0);
+        tileEl.classList.add("wrong");
+        feedbackEl.style.color = "#ef4444";
+        feedbackEl.textContent = "Wrong pattern! -2.0s";
+        updateHUD();
+
+        if (timeLeft <= 0) endGame();
+      }
+    }
+
+    function updateHUD() {
+      scoreEl.textContent = score;
+      streakEl.textContent = streak;
+      timerEl.textContent = `${timeLeft.toFixed(1)}s`;
+    }
+
+    function startGame() {
+      score = 0;
+      streak = 0;
+      timeLeft = 30.0;
+      isPlaying = true;
+      feedbackEl.textContent = "";
+      startBtn.classList.add("hidden");
+      playArea.classList.remove("hidden");
+      updateHUD();
+      nextRound();
+
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        timeLeft -= 0.1;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          updateHUD();
+          endGame();
+        } else {
+          updateHUD();
+        }
+      }, 100);
+    }
+
+    function endGame() {
+      isPlaying = false;
+      clearInterval(timerInterval);
+      playArea.classList.add("hidden");
+      startBtn.textContent = `Time's Up! Final Score: ${score} — Play Again`;
+      startBtn.classList.remove("hidden");
+    }
+
+    startBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
